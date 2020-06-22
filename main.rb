@@ -17,14 +17,6 @@ class Node
     return false if left.nil? && right.nil?
     true
   end
-
-  def remove_left
-    @left = nil
-  end
-
-  def remove_right
-    @right = nil
-  end
 end
 
 class Tree
@@ -88,32 +80,141 @@ class Tree
 
   def remove(node, parent_node)
     if parent_node.left.nil? && node.has_children?
-
-    elsif parent_node.right.nil?
-
-    end
-
-    if node.left.nil? && node.right.nil?
+      new_node = delete_with_children(node)
+      parent_node.right = new_node
       node = nil
-    elsif node.left.nil?
-      node = node.right
-    elsif node.right.nil?
-      node = node.left
+    elsif parent_node.right.nil? && node.has_children?
+      new_node = delete_with_children(node)
+      parent_node.left = new_node
+      node = nil
+    elsif node.has_children?
+      new_node = delete_with_children(node)
+      parent_node.left == node ? parent_node.left = new_node : parent_node.right = new_node
+      node = nil
+    elsif parent_node.left.nil?
+      node = nil
+      parent_node.right = node
+    elsif parent_node.right.nil?
+      node = nil
+      parent_node.left = node
     else
-      delete_with_children(node)
+      parent_node.left == node ? parent_node.left = nil : parent_node.right = nil
+      node = nil
     end
   end
 
   def delete_with_children(node)
-    
+    new_node = nil
+    if node.right.nil?
+      new_node = node.left
+    elsif node.left.nil?
+      new_node = node.right
+    else
+      min = find_min(node.right)
+      delete(min)
+      new_node = Node.new(min)
+      new_node.left = node.left
+      new_node.right = node.right
+    end
+    new_node
   end
 
-  
+  def find_min(node)
+    if node.left.nil?
+      return node.data
+    else
+      find_min(node.left)
+    end
+  end
 
+  def level_order(&block)
+    queue = [@root]
+    output = []
+    until queue.length == 0
+      node = queue.shift
+      block_given? ? yield(node) : output.push(node)
+      queue.push(node.left) unless node.left.nil?
+      queue.push(node.right) unless node.right.nil?
+    end
+    output unless block_given?
+  end
+
+  def inorder(node = @root, &block)
+    output = []
+    if node.nil?
+      return
+    end
+    
+    output.push(inorder(node.left, &block))
+    block_given? ? yield(node) : output.push(node)
+    output.push(inorder(node.right, &block))
+
+    output.flatten.delete_if { |n| n.nil? } unless block_given?
+  end
+  
+  def preorder(node = @root, &block)
+    output = []
+    if node.nil?
+      return
+    end
+    
+    block_given? ? yield(node) : output.push(node)
+    output.push(preorder(node.left, &block))
+    output.push(preorder(node.right, &block))
+
+    output.flatten.delete_if { |n| n.nil? } unless block_given?
+  end
+
+  def postorder(node = @root, &block)
+    output = []
+    if node.nil?
+      return
+    end
+    
+    output.push(preorder(node.left, &block))
+    output.push(preorder(node.right, &block))
+    block_given? ? yield(node) : output.push(node)
+
+    output.flatten.delete_if { |n| n.nil? } unless block_given?
+  end
+
+  def depth(node = @root)
+    return 0 if node.nil?
+
+    left_depth = depth(node.left)
+    right_depth = depth(node.right)
+
+    left_depth > right_depth ? left_depth + 1 : right_depth + 1
+  end
+
+  def balanced?
+    left_depth = depth(@root.left)
+    right_depth = depth(@root.right)
+
+    if left_depth - right_depth > 1 || right_depth - left_depth > 1
+      "The tree is unbalanced"
+    else
+      "The tree is balanced"
+    end
+  end
+
+  def rebalance!
+    output = []
+    level_order { |n| output.push(n.data) }
+    @root = build_tree(output.sort.uniq)
+  end
 end
 
 t = Tree.new([1,5,2,4,7,3,8,9,4,0,6])
 t.insert(10)
-t.delete(10)
-puts t.find(9)
-puts t.find_parent(10)
+t.insert(11)
+t.insert(12)
+t.insert(13)
+t.insert(14)
+puts t.balanced?
+t.inorder { |n| print "#{n.data}, " }
+puts "the root is: #{t.root.data}"
+t.rebalance!
+puts t.balanced?
+t.inorder { |n| print "#{n.data}, " }
+puts "the root is: #{t.root.data}"
