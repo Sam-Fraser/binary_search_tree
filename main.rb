@@ -204,17 +204,3 @@ class Tree
     @root = build_tree(output.sort.uniq)
   end
 end
-
-t = Tree.new([1,5,2,4,7,3,8,9,4,0,6])
-t.insert(10)
-t.insert(11)
-t.insert(12)
-t.insert(13)
-t.insert(14)
-puts t.balanced?
-t.inorder { |n| print "#{n.data}, " }
-puts "the root is: #{t.root.data}"
-t.rebalance!
-puts t.balanced?
-t.inorder { |n| print "#{n.data}, " }
-puts "the root is: #{t.root.data}"
